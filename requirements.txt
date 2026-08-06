@@ -1,0 +1,37 @@
+# FastAPI 核心
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+
+# Pydantic
+pydantic>=2.5.0
+
+# LangChain & Ollama
+langchain>=0.1.0
+langchain-ollama>=0.1.0
+langchain-community>=0.1.0
+langchain-text-splitters>=0.1.0
+
+# 向量数据库
+chromadb>=0.4.0
+
+# Ollama
+ollama>=0.1.0
+
+# 图像处理
+Pillow>=10.0.0
+
+# 网络抓取
+requests>=2.28.0
+beautifulsoup4>=4.12.0
+
+# Gradio
+gradio>=4.0.0
+
+# transformers & torch (practice Gradio 应用需要)
+transformers>=4.30.0
+torch>=2.0.0
+
+# FAISS
+faiss-cpu>=1.7.0
+numpy>=1.24.0
