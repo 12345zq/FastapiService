@@ -11,9 +11,8 @@ from pathlib import Path
 from PIL import Image
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import DirectoryLoader
 from langchain_community.vectorstores import Chroma
-
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from config import MM_MODEL, MM_EMBED_MODEL, MM_DATA_DIR, MM_DB_DIR, UPLOAD_DIR
 
 logger = logging.getLogger(__name__)

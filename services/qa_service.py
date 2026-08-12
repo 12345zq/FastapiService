@@ -1,7 +1,7 @@
 """
 封装 demo01 的 RAG 知识库问答服务
 文档：text01/《大美安徽》Markdown 文档
-模型：deepseek-r1:latest | bge-m3:latest
+模型：MFDoom/deepseek-r1-tool-calling:7b | bge-m3:latest
 向量库：Chroma 持久化
 """
 import logging

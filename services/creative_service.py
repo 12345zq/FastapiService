@@ -1,18 +1,17 @@
 """
 封装 demo02 的内容创作生成服务
 文档：text02/创作技巧 TXT
-模型：deepseek-r1:latest | bge-m3
+模型：MFDoom/deepseek-r1-tool-calling:7b | bge-m3
 向量库：Chroma 持久化
 """
 import logging
 from langchain_ollama import ChatOllama, OllamaEmbeddings
-from langchain_community.document_loaders import DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
-
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from config import CREATIVE_MODEL, CREATIVE_EMBED_MODEL, CREATIVE_DATA_DIR, CREATIVE_DB_DIR
 
 logger = logging.getLogger(__name__)

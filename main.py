@@ -11,8 +11,7 @@ API 文档：
     http://localhost:8000/redoc     ReDoc
 
 Gradio 演示：
-    http://localhost:8000/gradio/medical    医疗问答
-    http://localhost:8000/gradio/movie      电影推荐
+    http://localhost:8000/gradio/query    医疗问答
 """
 import logging
 import sys
@@ -40,8 +39,7 @@ app = FastAPI(
 | ✍️ 内容创作 | `/api/creative` | 基于创作技巧的内容生成 |
 | 🖼️ 多模态分析 | `/api/multimodal` | 上传图片 + 知识库综合分析 |
 | 🔄 动态知识库 | `/api/knowledge` | 网页抓取 + 增量更新 + 问答 |
-| 🏥 医疗问答 | `/gradio/medical` | 医疗知识库 Gradio 演示 |
-| 🎬 电影推荐 | `/gradio/movie` | 电影语义推荐 Gradio 演示 |
+| 🏥 智能问答 | `/gradio/query` | 知识库 Gradio 演示 |
 """,
     version="1.0.0",
     docs_url="/docs",
@@ -121,8 +119,7 @@ async def startup_event():
     logger.info("   创作 API: http://localhost:8000/api/creative/generate")
     logger.info("   多模态 API: http://localhost:8000/api/multimodal/analyze")
     logger.info("   知识库 API: http://localhost:8000/api/knowledge/fetch")
-    logger.info("   医疗问答演示: http://localhost:8000/gradio/medical")
-    logger.info("   电影推荐演示: http://localhost:8000/gradio/movie")
+    logger.info("   问答演示: http://localhost:8000/gradio/query")
     logger.info("=" * 50)
 
 
@@ -142,29 +139,18 @@ async def root():
             "knowledge": "/api/knowledge",
         },
         "gradio_demos": {
-            "medical_qa": "/gradio/medical",
-            "movie_recommend": "/gradio/movie",
+            "demo_qa": "/gradio/query"
         },
     }
 
-
 # ============ 挂载 Gradio 应用 ============
 try:
-    from gradio_apps.medical_qa import create_medical_qa_app
-    medical_app = create_medical_qa_app()
-    app = gr.mount_gradio_app(app, medical_app, path="/gradio/medical")
-    logger.info("✅ Gradio 医疗问答界面已挂载")
+    from gradio_apps.demo_qa import create_demo_app
+    demo_app = create_demo_app()
+    app = gr.mount_gradio_app(app, demo_app, path="/gradio/query")
+    logger.info("✅ Gradio 智能问答界面已挂载")
 except Exception as e:
-    logger.warning(f"⚠️  Gradio 医疗问答界面加载失败: {e}")
-
-try:
-    from gradio_apps.movie_recommend import create_movie_recommend_app
-    movie_app = create_movie_recommend_app()
-    app = gr.mount_gradio_app(app, movie_app, path="/gradio/movie")
-    logger.info("✅ Gradio 电影推荐界面已挂载")
-except Exception as e:
-    logger.warning(f"⚠️  Gradio 电影推荐界面加载失败: {e}")
-
+    logger.warning(f"⚠️  Gradio 智能问答界面加载失败: {e}")
 
 # ============ 直接运行 ============
 if __name__ == "__main__":

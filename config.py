@@ -11,13 +11,13 @@ BASE_DIR = Path(__file__).parent.resolve()
 OLLAMA_BASE_URL = "http://localhost:11434"
 
 # ============ demo01: 知识库问答 ============
-QA_MODEL = "deepseek-r1:latest"
+QA_MODEL = "MFDoom/deepseek-r1-tool-calling:7b"
 QA_EMBED_MODEL = "bge-m3:latest"
 QA_DATA_DIR = BASE_DIR / "data" / "text01"
 QA_DB_DIR = BASE_DIR / "db" / "demo01"
 
 # ============ demo02: 内容创作生成 ============
-CREATIVE_MODEL = "deepseek-r1:latest"
+CREATIVE_MODEL = "MFDoom/deepseek-r1-tool-calling:7b"
 CREATIVE_EMBED_MODEL = "bge-m3"
 CREATIVE_DATA_DIR = BASE_DIR / "data" / "text02"
 CREATIVE_DB_DIR = BASE_DIR / "db" / "demo02"
@@ -29,7 +29,7 @@ MM_DATA_DIR = BASE_DIR / "data" / "text03"
 MM_DB_DIR = BASE_DIR / "db" / "demo03"
 
 # ============ demo04: 动态知识库 ============
-KNOWLEDGE_MODEL = "deepseek-r1:latest"
+KNOWLEDGE_MODEL = "MFDoom/deepseek-r1-tool-calling:7b"
 KNOWLEDGE_EMBED_MODEL = "nomic-embed-text"
 KNOWLEDGE_DB_DIR = BASE_DIR / "db" / "demo04"
 
@@ -37,7 +37,7 @@ KNOWLEDGE_DB_DIR = BASE_DIR / "db" / "demo04"
 BGE_MODEL_PATH = (BASE_DIR / "models_local" / "bge-small-zh-v1.5" / "bge-small-zh-v1.5").resolve()
 
 # ============ practice: 数据目录 ============
-MEDICAL_DATA_DIR = BASE_DIR / "practice_data" / "medical"
+DEMO_DATA_DIR = BASE_DIR / "practice_data" / "demo"
 MOVIES_DATA_DIR = BASE_DIR / "practice_data" / "movies"
 
 # ============ 上传文件保存目录 ============

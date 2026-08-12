@@ -1,7 +1,7 @@
 """
 封装 demo04 的动态知识库管理服务
 功能：网络抓取 + 增量向量库更新 + RAG 问答
-模型：deepseek-r1:latest | nomic-embed-text
+模型：MFDoom/deepseek-r1-tool-calling:7b | nomic-embed-text
 向量库：Chroma 持久化
 """
 import logging
