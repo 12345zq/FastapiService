@@ -6,14 +6,14 @@
 """
 import logging
 import os
-import ollama
 import requests
 from bs4 import BeautifulSoup
 from langchain_community.vectorstores import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_ollama import OllamaEmbeddings
+from langchain_openai import OpenAIEmbeddings
 
-from config import KNOWLEDGE_MODEL, KNOWLEDGE_EMBED_MODEL, KNOWLEDGE_DB_DIR, OLLAMA_BASE_URL
+from config import KNOWLEDGE_MODEL, KNOWLEDGE_EMBED_MODEL, KNOWLEDGE_DB_DIR, OPENAI_API_BASE, OPENAI_API_KEY
+from services.llm_client import chat_completion
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class KnowledgeService:
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=500, chunk_overlap=50
         )
-        self.embeddings = OllamaEmbeddings(model=KNOWLEDGE_EMBED_MODEL, base_url=OLLAMA_BASE_URL)
+        self.embeddings = OpenAIEmbeddings(model=KNOWLEDGE_EMBED_MODEL, openai_api_key=OPENAI_API_KEY, openai_api_base=OPENAI_API_BASE, check_embedding_ctx_length=False)
         self._initialized = False
 
     def initialize(self):
@@ -98,13 +98,13 @@ class KnowledgeService:
         try:
             docs = self.vector_db.similarity_search(question, k=10)
             context = "\n".join([d.page_content for d in docs])
-            response = ollama.Client(host=OLLAMA_BASE_URL).generate(
+            answer = chat_completion(
                 model=KNOWLEDGE_MODEL,
                 prompt=f"基于以下上下文:\n{context}\n问题: {question}\n",
             )
             return {
                 "success": True,
-                "answer": response["response"],
+                "answer": answer,
                 "source_count": len(docs),
             }
         except Exception as e:

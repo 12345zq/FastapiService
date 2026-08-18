@@ -5,16 +5,15 @@
 向量库：Chroma 持久化
 """
 import logging
-from ollama._types import GenerateResponse
 import os
-import ollama
 from pathlib import Path
 from PIL import Image
-from langchain_ollama import OllamaEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
-from config import MM_MODEL, MM_EMBED_MODEL, MM_DATA_DIR, MM_DB_DIR, UPLOAD_DIR, OLLAMA_BASE_URL
+from config import MM_MODEL, MM_EMBED_MODEL, MM_DATA_DIR, MM_DB_DIR, UPLOAD_DIR, OPENAI_API_BASE, OPENAI_API_KEY
+from services.llm_client import chat_completion, chat_completion_with_image
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ class MultiModalService:
         logger.info("MultiModalService: 初始化完成")
 
     def _prepare_text_db(self):
-        embeddings = OllamaEmbeddings(model=MM_EMBED_MODEL, base_url=OLLAMA_BASE_URL)
+        embeddings = OpenAIEmbeddings(model=MM_EMBED_MODEL, openai_api_key=OPENAI_API_KEY, openai_api_base=OPENAI_API_BASE, check_embedding_ctx_length=False)
         if MM_DB_DIR.exists() and any(MM_DB_DIR.iterdir()):
             logger.info(f"MultiModalService: 加载已有向量库 {MM_DB_DIR}")
             return Chroma(
@@ -87,21 +86,20 @@ class MultiModalService:
             temp_path = UPLOAD_DIR / "temp.jpg"
             img.save(str(temp_path))
 
-            # 使用 LLaVA 描述图像
+            # 使用 LLaVA 描述图像（OpenAI 兼容：图片经 base64 data URI 传入）
             logger.info(f"MultiModalService: 使用 {MM_MODEL} 描述图像...")
-            response: GenerateResponse = ollama.Client(host=OLLAMA_BASE_URL).generate(
+            description = chat_completion_with_image(
                 model=MM_MODEL,
-                prompt="请描述这张图片内容（中文）: ",
-                images=[img_path],
+                text="请描述这张图片内容（中文）: ",
+                image_path=str(temp_path),
             )
-            description = response["response"]
 
             # 检索相关文本知识
             docs = self.text_db.similarity_search(description, k=1)
             context = "\n".join([d.page_content for d in docs])
 
             # 生成综合分析报告
-            final_response = ollama.Client(host=OLLAMA_BASE_URL).generate(
+            final_report = chat_completion(
                 model=MM_MODEL,
                 prompt=f"根据以下信息生成一份综合分析报告（中文）:\n\n"
                        f"图像描述: {description}\n\n"
@@ -112,7 +110,7 @@ class MultiModalService:
                 "success": True,
                 "image_description": description,
                 "related_info": [d.metadata for d in docs],
-                "final_report": final_response["response"],
+                "final_report": final_report,
             }
         except Exception as e:
             logger.exception("MultiModalService analyze_image 出错")

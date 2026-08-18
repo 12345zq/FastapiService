@@ -8,12 +8,12 @@ import logging
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
-from langchain_ollama import ChatOllama, OllamaEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 
-from config import QA_MODEL, QA_EMBED_MODEL, QA_DATA_DIR, QA_DB_DIR, OLLAMA_BASE_URL
+from config import QA_MODEL, QA_EMBED_MODEL, QA_DATA_DIR, QA_DB_DIR, OPENAI_API_BASE, OPENAI_API_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class QAService:
         return text_splitter.split_documents(documents)
 
     def _load_or_create_vectorstore(self, docs):
-        embeddings = OllamaEmbeddings(model=QA_EMBED_MODEL, base_url=OLLAMA_BASE_URL)
+        embeddings = OpenAIEmbeddings(model=QA_EMBED_MODEL, openai_api_key=OPENAI_API_KEY, openai_api_base=OPENAI_API_BASE, check_embedding_ctx_length=False)
         if QA_DB_DIR.exists() and any(QA_DB_DIR.iterdir()):
             logger.info(f"QAService: 加载已有向量库 {QA_DB_DIR}")
             return Chroma(
@@ -71,7 +71,7 @@ class QAService:
         )
 
     def _setup_qa_chain(self):
-        llm = ChatOllama(model=QA_MODEL, base_url=OLLAMA_BASE_URL, temperature=0)
+        llm = ChatOpenAI(model_name=QA_MODEL, openai_api_base=OPENAI_API_BASE, openai_api_key=OPENAI_API_KEY, temperature=0)
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 5})
 
         def _format_docs(docs):

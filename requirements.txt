@@ -6,17 +6,17 @@ python-multipart>=0.0.6
 # Pydantic
 pydantic>=2.5.0
 
-# LangChain & Ollama
+# LangChain & OpenAI 兼容协议
 langchain>=0.1.0
-langchain-ollama>=0.1.0
+langchain-openai>=1.5.1
 langchain-community>=0.1.0
 langchain-text-splitters>=0.1.0
 
 # 向量数据库
 chromadb>=0.4.0
 
-# Ollama
-ollama>=0.1.0
+# OpenAI 兼容 API（对接本地 Ollama /v1 端点）
+openai>=1.0.0
 
 # 图像处理
 Pillow>=10.0.0

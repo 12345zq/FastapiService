@@ -19,6 +19,7 @@ import gradio as gr
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import OLLAMA_BASE_URL
+from services.llm_client import get_openai_client
 
 # 配置日志
 logging.basicConfig(
@@ -69,15 +70,13 @@ app.include_router(knowledge.router)
 @app.on_event("startup")
 async def startup_event():
     """服务器启动时初始化所有 RAG 服务"""
-    import ollama
-
-    # 检查 Ollama 服务
+    # 检查 LLM 服务（OpenAI 兼容端点）
     try:
-        ollama.Client(host=OLLAMA_BASE_URL).list()
-        logger.info("Ollama 服务连接正常")
+        get_openai_client().models.list()
+        logger.info(f"LLM 服务连接正常（OpenAI 兼容端点 {OLLAMA_BASE_URL}/v1）")
     except Exception:
         logger.warning(
-            "⚠️  无法连接到 Ollama 服务！请先执行：ollama serve\n"
+            "⚠️  无法连接到 LLM 服务（Ollama）！请先执行：ollama serve\n"
             "    API 接口将返回错误，但服务仍会启动"
         )
 

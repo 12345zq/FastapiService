@@ -5,14 +5,14 @@
 向量库：Chroma 持久化
 """
 import logging
-from langchain_ollama import ChatOllama, OllamaEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
-from config import CREATIVE_MODEL, CREATIVE_EMBED_MODEL, CREATIVE_DATA_DIR, CREATIVE_DB_DIR, OLLAMA_BASE_URL
+from config import CREATIVE_MODEL, CREATIVE_EMBED_MODEL, CREATIVE_DATA_DIR, CREATIVE_DB_DIR, OPENAI_API_BASE, OPENAI_API_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ class CreativeService:
         return text_splitter.split_documents(documents)
 
     def _load_or_create_vectorstore(self, docs):
-        embeddings = OllamaEmbeddings(model=CREATIVE_EMBED_MODEL, base_url=OLLAMA_BASE_URL)
+        embeddings = OpenAIEmbeddings(model=CREATIVE_EMBED_MODEL, openai_api_key=OPENAI_API_KEY, openai_api_base=OPENAI_API_BASE, check_embedding_ctx_length=False)
         if CREATIVE_DB_DIR.exists() and any(CREATIVE_DB_DIR.iterdir()):
             logger.info(f"CreativeService: 加载已有向量库 {CREATIVE_DB_DIR}")
             return Chroma(
@@ -87,11 +87,11 @@ class CreativeService:
             input_dict["context"] = "\n\n".join([d.page_content for d in docs])
             return input_dict
 
-        ollama_llm = ChatOllama(model=CREATIVE_MODEL, base_url=OLLAMA_BASE_URL)
+        llm = ChatOpenAI(model_name=CREATIVE_MODEL, openai_api_base=OPENAI_API_BASE, openai_api_key=OPENAI_API_KEY)
         self.chain = (
             RunnableLambda(retrieve_and_build_input)
             | prompt
-            | ollama_llm
+            | llm
             | StrOutputParser()
         )
 

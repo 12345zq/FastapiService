@@ -12,6 +12,13 @@ BASE_DIR = Path(__file__).parent.resolve()
 # Docker 部署时通过环境变量 OLLAMA_BASE_URL 覆盖（如 http://host.docker.internal:11434）
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
+# ============ OpenAI 兼容 Chat Completions API ============
+# 默认派生自 OLLAMA_BASE_URL + "/v1"（本地 Ollama 的 OpenAI 兼容端点，只需 ollama serve）
+# 可独立覆盖以切换到任意 OpenAI 兼容服务（如第三方云服务）
+OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", f"{OLLAMA_BASE_URL}/v1")
+# 本地 Ollama 忽略 key 内容，仅要求非空占位；切第三方服务时改为真实 key
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "ollama")
+
 # ============ demo01: 知识库问答 ============
 QA_MODEL = "MFDoom/deepseek-r1-tool-calling:7b"
 QA_EMBED_MODEL = "bge-m3:latest"

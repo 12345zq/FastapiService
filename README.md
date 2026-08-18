@@ -1,6 +1,6 @@
 # RAG 统一服务平台
 
-基于 **FastAPI + Ollama + LangChain + ChromaDB + Gradio** 的多模块 RAG（检索增强生成）服务平台，提供知识库问答、内容创作、多模态图像分析、动态知识库四大能力，并内置 Gradio 演示界面。
+基于 **FastAPI + Ollama + LangChain + ChromaDB + Gradio** 的多模块 RAG（检索增强生成）服务平台，提供知识库问答、内容创作、多模态图像分析、动态知识库四大能力，并内置 Gradio 演示界面。所有 LLM/嵌入调用统一走 **OpenAI 兼容 Chat Completions API**（对接本地 Ollama 的 `/v1` 端点），语言与嵌入模型可无缝切换任意 OpenAI 兼容服务。
 
 ---
 
@@ -21,13 +21,14 @@ FastAPI 应用 (main.py)
    │
    ▼
 Service 层 (services/)
-   ├── qa_service        问答：Chroma 检索 → Ollama 生成
-   ├── creative_service  创作：Chroma 检索 → Ollama 生成
+   ├── llm_client        OpenAI 兼容封装（chat_completion / 图像对话）
+   ├── qa_service        问答：Chroma 检索 → ChatOpenAI 生成
+   ├── creative_service  创作：Chroma 检索 → ChatOpenAI 生成
    ├── multimodal_service 多模态：图片描述 + 向量检索 + 综合报告
    └── knowledge_service 动态库：网页抓取 → 增量入库 → 问答
    │
    ▼
-Ollama (本地大模型服务, http://localhost:11434)
+Ollama OpenAI 兼容端点 (/v1, http://localhost:11434/v1)
    ├── MFDoom/deepseek-r1-tool-calling:7b   （问答/创作/知识库）
    ├── bge-m3                                （问答/创作 向量模型）
    ├── nomic-embed-text                      （多模态/知识库 向量模型）
@@ -38,6 +39,7 @@ Ollama (本地大模型服务, http://localhost:11434)
 
 - **向量库持久化**：四个模块各自独立的 Chroma 向量库（`db/demo01~04`），启动时检测到已有库则**直接加载**，不重复构建
 - **数据与代码分离**：知识库源文档（`data/`）与向量库（`db/`）通过 Docker 卷从宿主机挂载，容器重建数据不丢失
+- **统一 OpenAI 兼容协议**：全部 LLM/嵌入请求统一走 Chat Completions API（`langchain-openai` 的 `ChatOpenAI`/`OpenAIEmbeddings`），`services/llm_client.py` 提供 `chat_completion`/`chat_completion_with_image` 封装；`OPENAI_API_BASE` 默认派生自 `OLLAMA_BASE_URL + "/v1"`，也可独立覆盖切换第三方 OpenAI 兼容服务
 - **Ollama 地址可配置**：通过环境变量 `OLLAMA_BASE_URL` 覆盖（默认 `localhost:11434`），本地与 Docker 部署切换无需改代码
 
 ### 3. 功能模块
@@ -65,7 +67,7 @@ FastapiService/
 ├── db/                      # 已有 Chroma 向量库（demo01/02/03）
 ├── routers/                 # API 路由层
 ├── schemas/                 # Pydantic 请求/响应模型
-├── services/                # 业务服务层（RAG 核心）
+├── services/                # 业务服务层（RAG 核心，含 llm_client.py 统一 LLM 封装）
 ├── gradio_apps/             # Gradio 演示应用
 └── uploads/                 # 上传文件目录（运行时创建）
 ```
@@ -116,6 +118,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 | 依赖 | `requirements-docker.txt`，**锁定与本地一致版本**（chromadb 1.5.9 / gradio 6.22.0 等），保证已有向量库格式兼容 |
 | 数据挂载 | `./data` → `/app/data`、`./db` → `/app/db`，**双向实时同步**，容器销毁数据不丢失 |
 | Ollama 访问 | 环境变量 `OLLAMA_BASE_URL`，容器内经 `host.docker.internal:11434` 访问宿主机 Ollama |
+| OpenAI 兼容端点 | `OPENAI_API_BASE` 默认派生自 `OLLAMA_BASE_URL + "/v1"`，无需设置；切第三方服务时用 `OPENAI_API_BASE`/`OPENAI_API_KEY` 覆盖 |
 | 端口 | `8000` |
 
 ### 2. Dockerfile
@@ -159,6 +162,9 @@ services:
       - "8000:8000"
     environment:
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      # 切第三方 OpenAI 兼容服务时再取消注释：
+      # - OPENAI_API_BASE=${OPENAI_API_BASE:-http://host.docker.internal:11434/v1}
+      # - OPENAI_API_KEY=${OPENAI_API_KEY:-ollama}
     volumes:
       - ./data:/app/data
       - ./db:/app/db
@@ -187,6 +193,8 @@ docker build -t fastapi-rag .
 docker run -d --name fastapi-rag `
   -p 8000:8000 `
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 `
+  -e OPENAI_API_BASE=http://host.docker.internal:11434/v1 `
+  -e OPENAI_API_KEY=ollama `
   -v d:/source/FastapiService/data:/app/data `
   -v d:/source/FastapiService/db:/app/db `
   fastapi-rag
@@ -209,7 +217,7 @@ curl http://localhost:8000/          # 服务状态 JSON
 
 | 现象 | 处理 |
 |------|------|
-| 启动日志提示无法连接 Ollama | 宿主机先执行 `ollama serve`，且已 pull 上述 4 个模型 |
+| 启动日志提示无法连接 LLM 服务（Ollama） | 宿主机先执行 `ollama serve`，且已 pull 上述 4 个模型 |
 | 向量库加载失败（版本不兼容） | 确认 `requirements-docker.txt` 中 chromadb 版本与构建 db 的环境一致 |
 | Python 3.14 上某依赖无 wheel 构建失败 | 将 Dockerfile 基础镜像改为 `python:3.12-slim` 重新构建 |
 | 通过知识库 API 新增内容不生效 | 确认 `./db` 挂载成功（`docker compose config` 查看 volumes） |

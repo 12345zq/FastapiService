@@ -14,6 +14,10 @@ services:
       # Windows/macOS Docker Desktop：host.docker.internal 指向宿主机
       # 可通过 .env 或系统环境变量 OLLAMA_BASE_URL 覆盖
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      # OpenAI 兼容端点默认派生自 OLLAMA_BASE_URL + "/v1"，无需单独设置
+      # 切第三方 OpenAI 兼容服务时再显式覆盖：
+      # - OPENAI_API_BASE=${OPENAI_API_BASE:-http://host.docker.internal:11434/v1}
+      # - OPENAI_API_KEY=${OPENAI_API_KEY:-ollama}
     volumes:
       # 知识库文档（问答/创作/多模态源数据）
       - ./data:/app/data
