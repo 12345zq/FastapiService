@@ -12,6 +12,15 @@ BASE_DIR = Path(__file__).parent.resolve()
 # Docker 部署时通过环境变量 OLLAMA_BASE_URL 覆盖（如 http://host.docker.internal:11434）
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
+# ============ 交互记录存储（PostgreSQL + Redis） ============
+# Docker 部署时默认指向 compose 内的 postgres/redis 服务（见 docker-compose.yml）
+# 本地开发默认 localhost；未启动对应服务时记录模块自动降级，不影响问答/创作主流程
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+psycopg://rag:rag@localhost:5432/rag_records",
+)
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
 # ============ OpenAI 兼容 Chat Completions API ============
 # 默认派生自 OLLAMA_BASE_URL + "/v1"（本地 Ollama 的 OpenAI 兼容端点，只需 ollama serve）
 # 可独立覆盖以切换到任意 OpenAI 兼容服务（如第三方云服务）

@@ -5,6 +5,8 @@
 向量库：Chroma 持久化
 """
 import logging
+import time
+
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
@@ -13,6 +15,7 @@ from langchain_core.runnables import RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from config import CREATIVE_MODEL, CREATIVE_EMBED_MODEL, CREATIVE_DATA_DIR, CREATIVE_DB_DIR, OPENAI_API_BASE, OPENAI_API_KEY
+from services.record_service import submit_save
 
 logger = logging.getLogger(__name__)
 
@@ -96,9 +99,10 @@ class CreativeService:
         )
 
     def generate(self, genre: str, requirements: str) -> dict:
-        """生成创作内容，返回结果和参考来源"""
+        """生成创作内容，返回结果和参考来源；结果异步写入交互记录"""
         if not self._initialized:
             return {"success": False, "error": "服务未初始化，请先调用 initialize()"}
+        start = time.perf_counter()
         try:
             result = self.chain.invoke({
                 "genre": genre,
@@ -110,9 +114,32 @@ class CreativeService:
                  "content_preview": doc.page_content[:100]}
                 for i, doc in enumerate(docs)
             ]
+            submit_save({
+                "record_type": "creative",
+                "model": CREATIVE_MODEL,
+                "user_input": f"{genre}\n{requirements}",
+                "output": result,
+                "sources": sources,
+                "extra": {
+                    "genre": genre,
+                    "requirements": requirements,
+                    "latency_ms": int((time.perf_counter() - start) * 1000),
+                },
+                "status": "success",
+            })
             return {"success": True, "result": result, "sources": sources}
         except Exception as e:
             logger.exception("CreativeService generate 出错")
+            submit_save({
+                "record_type": "creative",
+                "model": CREATIVE_MODEL,
+                "user_input": f"{genre}\n{requirements}",
+                "output": None,
+                "sources": None,
+                "extra": {"genre": genre, "requirements": requirements},
+                "status": "failed",
+                "error_message": str(e),
+            })
             return {"success": False, "error": str(e)}
 
 

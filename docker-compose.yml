@@ -2,6 +2,40 @@
 # 使用：docker compose up -d --build
 # data/db 通过本地挂载与宿主机实时同步，容器销毁数据不丢失
 services:
+  # PostgreSQL 16：交互记录（问答/创作）主存储
+  postgres:
+    image: postgres:16-alpine
+    container_name: fastapi-postgres
+    environment:
+      POSTGRES_USER: rag
+      POSTGRES_PASSWORD: rag
+      POSTGRES_DB: rag_records
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rag -d rag_records"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Redis 7：交互记录详情缓存
+  redis:
+    image: redis:7-alpine
+    container_name: fastapi-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   rag:
     build:
       context: .
@@ -18,9 +52,18 @@ services:
       # 切第三方 OpenAI 兼容服务时再显式覆盖：
       # - OPENAI_API_BASE=${OPENAI_API_BASE:-http://host.docker.internal:11434/v1}
       # - OPENAI_API_KEY=${OPENAI_API_KEY:-ollama}
+      # 交互记录存储（PostgreSQL 主存储 + Redis 缓存），默认指向 compose 内的服务
+      # 生产环境务必通过 .env 覆盖为强密码：
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg://rag:rag@postgres:5432/rag_records}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
     volumes:
       # 知识库文档（问答/创作/多模态源数据）
       - ./data:/app/data
       # 已有向量库（Chroma），容器启动时直接加载，不重建
       - ./db:/app/db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped

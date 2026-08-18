@@ -5,6 +5,8 @@
 向量库：Chroma 持久化
 """
 import logging
+import time
+
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
@@ -14,6 +16,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 
 from config import QA_MODEL, QA_EMBED_MODEL, QA_DATA_DIR, QA_DB_DIR, OPENAI_API_BASE, OPENAI_API_KEY
+from services.record_service import submit_save
 
 logger = logging.getLogger(__name__)
 
@@ -96,9 +99,10 @@ class QAService:
         )
 
     def ask(self, question: str) -> dict:
-        """执行问答，返回答案和参考来源"""
+        """执行问答，返回答案和参考来源；结果异步写入交互记录"""
         if not self._initialized:
             return {"success": False, "error": "服务未初始化，请先调用 initialize()"}
+        start = time.perf_counter()
         try:
             answer = self.chain.invoke(question)
             docs = self.retriever.invoke(question)
@@ -107,9 +111,27 @@ class QAService:
                  "content_preview": doc.page_content[:100]}
                 for i, doc in enumerate(docs)
             ]
+            submit_save({
+                "record_type": "qa",
+                "model": QA_MODEL,
+                "user_input": question,
+                "output": answer,
+                "sources": sources,
+                "extra": {"latency_ms": int((time.perf_counter() - start) * 1000)},
+                "status": "success",
+            })
             return {"success": True, "answer": answer, "sources": sources}
         except Exception as e:
             logger.exception("QAService ask 出错")
+            submit_save({
+                "record_type": "qa",
+                "model": QA_MODEL,
+                "user_input": question,
+                "output": None,
+                "sources": None,
+                "status": "failed",
+                "error_message": str(e),
+            })
             return {"success": False, "error": str(e)}
 
     def reload(self) -> dict:

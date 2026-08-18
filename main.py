@@ -58,12 +58,13 @@ app.add_middleware(
 )
 
 # ============ 注册 API 路由 ============
-from routers import qa, creative, multimodal, knowledge
+from routers import qa, creative, multimodal, knowledge, records
 
 app.include_router(qa.router)
 app.include_router(creative.router)
 app.include_router(multimodal.router)
 app.include_router(knowledge.router)
+app.include_router(records.router)
 
 
 # ============ 启动事件：初始化各服务 ============
@@ -112,6 +113,13 @@ async def startup_event():
     except Exception as e:
         logger.error(f"❌ 动态知识库服务初始化失败: {e}")
 
+    # 初始化交互记录服务（PostgreSQL + Redis，失败仅降级不影响主流程）
+    try:
+        from services.record_service import record_service
+        await record_service.initialize()
+    except Exception as e:
+        logger.error(f"❌ 交互记录服务初始化异常: {e}")
+
     logger.info("=" * 50)
     logger.info("🚀 RAG 统一服务平台已启动")
     logger.info("   API 文档: http://localhost:8000/docs")
@@ -119,6 +127,7 @@ async def startup_event():
     logger.info("   创作 API: http://localhost:8000/api/creative/generate")
     logger.info("   多模态 API: http://localhost:8000/api/multimodal/analyze")
     logger.info("   知识库 API: http://localhost:8000/api/knowledge/fetch")
+    logger.info("   记录查询 API: http://localhost:8000/api/records")
     logger.info("   问答演示: http://localhost:8000/gradio/query")
     logger.info("=" * 50)
 
@@ -137,6 +146,7 @@ async def root():
             "creative": "/api/creative",
             "multimodal": "/api/multimodal",
             "knowledge": "/api/knowledge",
+            "records": "/api/records",
         },
         "gradio_demos": {
             "demo_qa": "/gradio/query"
