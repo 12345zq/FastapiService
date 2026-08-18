@@ -2,13 +2,15 @@
 Fastapi_main 全局配置文件
 所有 demo 应用的模型、路径等参数集中管理
 """
+import os
 from pathlib import Path
 
 # ============ 项目根目录 ============
 BASE_DIR = Path(__file__).parent.resolve()
 
 # ============ Ollama 服务 ============
-OLLAMA_BASE_URL = "http://localhost:11434"
+# Docker 部署时通过环境变量 OLLAMA_BASE_URL 覆盖（如 http://host.docker.internal:11434）
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 # ============ demo01: 知识库问答 ============
 QA_MODEL = "MFDoom/deepseek-r1-tool-calling:7b"

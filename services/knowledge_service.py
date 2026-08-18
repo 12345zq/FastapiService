@@ -13,7 +13,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_ollama import OllamaEmbeddings
 
-from config import KNOWLEDGE_MODEL, KNOWLEDGE_EMBED_MODEL, KNOWLEDGE_DB_DIR
+from config import KNOWLEDGE_MODEL, KNOWLEDGE_EMBED_MODEL, KNOWLEDGE_DB_DIR, OLLAMA_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class KnowledgeService:
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=500, chunk_overlap=50
         )
-        self.embeddings = OllamaEmbeddings(model=KNOWLEDGE_EMBED_MODEL)
+        self.embeddings = OllamaEmbeddings(model=KNOWLEDGE_EMBED_MODEL, base_url=OLLAMA_BASE_URL)
         self._initialized = False
 
     def initialize(self):
@@ -98,7 +98,7 @@ class KnowledgeService:
         try:
             docs = self.vector_db.similarity_search(question, k=10)
             context = "\n".join([d.page_content for d in docs])
-            response = ollama.generate(
+            response = ollama.Client(host=OLLAMA_BASE_URL).generate(
                 model=KNOWLEDGE_MODEL,
                 prompt=f"基于以下上下文:\n{context}\n问题: {question}\n",
             )

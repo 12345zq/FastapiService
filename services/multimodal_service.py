@@ -5,6 +5,7 @@
 向量库：Chroma 持久化
 """
 import logging
+from ollama._types import GenerateResponse
 import os
 import ollama
 from pathlib import Path
@@ -13,7 +14,7 @@ from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
-from config import MM_MODEL, MM_EMBED_MODEL, MM_DATA_DIR, MM_DB_DIR, UPLOAD_DIR
+from config import MM_MODEL, MM_EMBED_MODEL, MM_DATA_DIR, MM_DB_DIR, UPLOAD_DIR, OLLAMA_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class MultiModalService:
         logger.info("MultiModalService: 初始化完成")
 
     def _prepare_text_db(self):
-        embeddings = OllamaEmbeddings(model=MM_EMBED_MODEL)
+        embeddings = OllamaEmbeddings(model=MM_EMBED_MODEL, base_url=OLLAMA_BASE_URL)
         if MM_DB_DIR.exists() and any(MM_DB_DIR.iterdir()):
             logger.info(f"MultiModalService: 加载已有向量库 {MM_DB_DIR}")
             return Chroma(
@@ -88,7 +89,7 @@ class MultiModalService:
 
             # 使用 LLaVA 描述图像
             logger.info(f"MultiModalService: 使用 {MM_MODEL} 描述图像...")
-            response = ollama.generate(
+            response: GenerateResponse = ollama.Client(host=OLLAMA_BASE_URL).generate(
                 model=MM_MODEL,
                 prompt="请描述这张图片内容（中文）: ",
                 images=[img_path],
@@ -100,7 +101,7 @@ class MultiModalService:
             context = "\n".join([d.page_content for d in docs])
 
             # 生成综合分析报告
-            final_response = ollama.generate(
+            final_response = ollama.Client(host=OLLAMA_BASE_URL).generate(
                 model=MM_MODEL,
                 prompt=f"根据以下信息生成一份综合分析报告（中文）:\n\n"
                        f"图像描述: {description}\n\n"

@@ -13,7 +13,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 
-from config import QA_MODEL, QA_EMBED_MODEL, QA_DATA_DIR, QA_DB_DIR
+from config import QA_MODEL, QA_EMBED_MODEL, QA_DATA_DIR, QA_DB_DIR, OLLAMA_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class QAService:
         return text_splitter.split_documents(documents)
 
     def _load_or_create_vectorstore(self, docs):
-        embeddings = OllamaEmbeddings(model=QA_EMBED_MODEL)
+        embeddings = OllamaEmbeddings(model=QA_EMBED_MODEL, base_url=OLLAMA_BASE_URL)
         if QA_DB_DIR.exists() and any(QA_DB_DIR.iterdir()):
             logger.info(f"QAService: 加载已有向量库 {QA_DB_DIR}")
             return Chroma(
@@ -71,7 +71,7 @@ class QAService:
         )
 
     def _setup_qa_chain(self):
-        llm = ChatOllama(model=QA_MODEL, temperature=0)
+        llm = ChatOllama(model=QA_MODEL, base_url=OLLAMA_BASE_URL, temperature=0)
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 5})
 
         def _format_docs(docs):

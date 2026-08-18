@@ -1,0 +1,22 @@
+# RAG 统一服务平台 - Docker Compose 配置
+# 使用：docker compose up -d --build
+# data/db 通过本地挂载与宿主机实时同步，容器销毁数据不丢失
+services:
+  rag:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fastapi-rag:latest
+    container_name: fastapi-rag
+    ports:
+      - "8000:8000"
+    environment:
+      # Windows/macOS Docker Desktop：host.docker.internal 指向宿主机
+      # 可通过 .env 或系统环境变量 OLLAMA_BASE_URL 覆盖
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    volumes:
+      # 知识库文档（问答/创作/多模态源数据）
+      - ./data:/app/data
+      # 已有向量库（Chroma），容器启动时直接加载，不重建
+      - ./db:/app/db
+    restart: unless-stopped

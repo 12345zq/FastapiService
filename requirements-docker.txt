@@ -1,0 +1,16 @@
+# Docker 部署依赖（锁定与本地一致的版本，保证 Chroma 向量库兼容）
+# 与 requirements.txt 的区别：去除 torch/transformers/faiss-cpu（practice 应用已删除）
+fastapi==0.141.1
+uvicorn==0.52.0
+python-multipart==0.0.32
+pydantic==2.13.4
+langchain-ollama==1.1.0
+langchain-community==0.4.2
+langchain-text-splitters==1.1.2
+chromadb==1.5.9
+ollama==0.6.2
+Pillow==12.3.0
+requests==2.34.2
+beautifulsoup4==4.15.0
+gradio==6.22.0
+numpy==2.4.6

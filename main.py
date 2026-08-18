@@ -18,6 +18,7 @@ import sys
 import gradio as gr
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from config import OLLAMA_BASE_URL
 
 # 配置日志
 logging.basicConfig(
@@ -72,7 +73,7 @@ async def startup_event():
 
     # 检查 Ollama 服务
     try:
-        ollama.list()
+        ollama.Client(host=OLLAMA_BASE_URL).list()
         logger.info("Ollama 服务连接正常")
     except Exception:
         logger.warning(

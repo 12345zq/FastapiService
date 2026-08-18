@@ -1,0 +1,17 @@
+# 版本控制与缓存
+.git
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# 运行时目录（镜像内自动创建）
+uploads/
+
+# 数据目录由 docker-compose 挂载，无需进入构建上下文
+data/
+db/
+
+# 部署编排文件无需进入镜像
+docker-compose.yml

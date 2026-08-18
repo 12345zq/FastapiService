@@ -12,7 +12,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
-from config import CREATIVE_MODEL, CREATIVE_EMBED_MODEL, CREATIVE_DATA_DIR, CREATIVE_DB_DIR
+from config import CREATIVE_MODEL, CREATIVE_EMBED_MODEL, CREATIVE_DATA_DIR, CREATIVE_DB_DIR, OLLAMA_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ class CreativeService:
         return text_splitter.split_documents(documents)
 
     def _load_or_create_vectorstore(self, docs):
-        embeddings = OllamaEmbeddings(model=CREATIVE_EMBED_MODEL)
+        embeddings = OllamaEmbeddings(model=CREATIVE_EMBED_MODEL, base_url=OLLAMA_BASE_URL)
         if CREATIVE_DB_DIR.exists() and any(CREATIVE_DB_DIR.iterdir()):
             logger.info(f"CreativeService: 加载已有向量库 {CREATIVE_DB_DIR}")
             return Chroma(
@@ -87,7 +87,7 @@ class CreativeService:
             input_dict["context"] = "\n\n".join([d.page_content for d in docs])
             return input_dict
 
-        ollama_llm = ChatOllama(model=CREATIVE_MODEL)
+        ollama_llm = ChatOllama(model=CREATIVE_MODEL, base_url=OLLAMA_BASE_URL)
         self.chain = (
             RunnableLambda(retrieve_and_build_input)
             | prompt
